@@ -1,0 +1,17 @@
+{
+  "extends": [
+    "react-app",
+    "eslint-config-airbnb-typescript-prettier",
+    "prettier"
+  ],
+  "rules": {
+    "jsx-quotes": [
+      1,
+      "prefer-double"
+    ]
+  },
+  "plugins": [
+    "prettier",
+    "@typescript-eslint"
+  ]
+}
