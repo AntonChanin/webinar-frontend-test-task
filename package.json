@@ -20,14 +20,31 @@
     "react-dom": "^17.0.2",
     "react-hook-form": "^7.9.0",
     "react-scripts": "4.0.3",
-    "typescript": "^4.3.4",
     "web-vitals": "^1.1.2"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "precommit": "lint-staged",
+    "pretty": "prettier --check src/**/*.ts",
+    "eslint": "node_modules/.bin/eslint src/**/*.tsx"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run precommit"
+    }
+  },
+  "lint-staged": {
+    "*.{js, jsx}": [
+      "node_modules/.bin/eslint --max-warnings=0",
+      "prettier --check src/**/*.tsx",
+      "prettier --check src/**/*.ts",
+      "prettier --check src/**/*.jsx",
+      "prettier --check src/**/*.js",
+      "git add"
+    ]
   },
   "eslintConfig": {
     "extends": [
@@ -47,5 +64,15 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.3.1",
+    "eslint": "^8.2.0",
+    "eslint-config-airbnb-typescript-prettier": "^4.2.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^7.0.4",
+    "lint-staged": "^11.2.6",
+    "prettier": "^2.4.1",
+    "typescript": "^4.4.4"
+  }
 }
