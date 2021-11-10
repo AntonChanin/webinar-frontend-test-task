@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
@@ -10,112 +10,168 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import { makeStyles } from '@material-ui/core/styles';
 import classnames from 'classnames';
 import { motion } from 'framer-motion';
+import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { TodoItem, useTodoItems } from './TodoItemsContext';
 
+
 const spring = {
-    type: 'spring',
-    damping: 25,
-    stiffness: 120,
-    duration: 0.25,
+  type: 'spring',
+  damping: 25,
+  stiffness: 120,
+  duration: 0.25,
 };
 
 const useTodoItemListStyles = makeStyles({
-    root: {
-        listStyle: 'none',
-        padding: 0,
-    },
+  root: {
+    listStyle: 'none',
+    padding: 0,
+  },
 });
 
 export const TodoItemsList = function () {
-    const { todoItems } = useTodoItems();
+  const { todoItems } = useTodoItems();
 
-    const classes = useTodoItemListStyles();
+  const [items, setItems] = useState<OrderProps>({
+    sortedItems: todoItems
+  });
+  const classes = useTodoItemListStyles();
 
-    const sortedItems = todoItems.slice().sort((a, b) => {
-        if (a.done && !b.done) {
-            return 1;
-        }
+  const sortedItems = todoItems.slice().sort((a, b) => {
+    if (a.done && !b.done) {
+      return 1;
+    }
 
-        if (!a.done && b.done) {
-            return -1;
-        }
+    if (!a.done && b.done) {
+      return -1;
+    }
+    return 0;
+  });
 
-        return 0;
-    });
+  interface OrderProps {
+    sortedItems: TodoItem[],
+    destination?: TodoItem,
+    source?: TodoItem,
+  }
 
-    return (
-        <ul className={classes.root}>
-            {sortedItems.map((item) => (
-                <motion.li key={item.id} transition={spring} layout={true}>
-                    <TodoItemCard item={item} />
-                </motion.li>
-            ))}
-        </ul>
+  useEffect(() => {
+    setItems({ sortedItems });
+  }, [])
+
+  const reorder = (list: TodoItem[], startIndex: number, endIndex: number) => {
+    const result = Array.from(list);
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+
+    return result;
+  };
+
+  function onDragEnd(result: any) {
+    if (!result.destination) {
+      return;
+    }
+
+    if (result.destination.index === result.source.index) {
+      return;
+    }
+
+    const reorderItems = reorder(
+      items.sortedItems,
+      result.source.index,
+      result.destination.index
     );
+
+    setItems({ sortedItems: reorderItems });
+  }
+
+  return (
+    <DragDropContext onDragEnd={onDragEnd}>
+      <Droppable droppableId={classes.root}>
+        {
+          (provided) => (
+            <ul className={classes.root} {...provided.droppableProps} ref={provided.innerRef}>
+              {items && items.sortedItems.map((item, index) => (
+                <Draggable key={item.id + 'drag'} draggableId={item.id} index={index}>
+                  {
+                    (provided) => (
+                      <div {...provided.draggableProps} {...provided.dragHandleProps} ref={provided.innerRef}>
+                        <motion.li key={item.id} transition={spring} layout={true} >
+                          <TodoItemCard item={item} />
+                        </motion.li>
+                      </div>
+                    )
+                  }
+                </Draggable>
+              ))}
+            </ul>
+          )
+        }
+      </Droppable>
+    </DragDropContext>
+  );
 };
 
 const useTodoItemCardStyles = makeStyles({
-    root: {
-        marginTop: 24,
-        marginBottom: 24,
-    },
-    doneRoot: {
-        textDecoration: 'line-through',
-        color: '#888888',
-    },
+  root: {
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  doneRoot: {
+    textDecoration: 'line-through',
+    color: '#888888',
+  },
 });
 
 export const TodoItemCard = function ({ item }: { item: TodoItem }) {
-    const classes = useTodoItemCardStyles();
-    const { dispatch } = useTodoItems();
+  const classes = useTodoItemCardStyles();
+  const { dispatch } = useTodoItems();
 
-    const handleDelete = useCallback(
-        () => dispatch({ type: 'delete', data: { id: item.id } }),
-        [item.id, dispatch],
-    );
+  const handleDelete = useCallback(
+    () => dispatch({ type: 'delete', data: { id: item.id } }),
+    [item.id, dispatch],
+  );
 
-    const handleToggleDone = useCallback(
-        () =>
-            dispatch({
-                type: 'toggleDone',
-                data: { id: item.id },
-            }),
-        [item.id, dispatch],
-    );
+  const handleToggleDone = useCallback(
+    () =>
+      dispatch({
+        type: 'toggleDone',
+        data: { id: item.id },
+      }),
+    [item.id, dispatch],
+  );
 
-    return (
-        <Card
-            className={classnames(classes.root, {
-                [classes.doneRoot]: item.done,
-            })}
-        >
-            <CardHeader
-                action={
-                    <IconButton aria-label="delete" onClick={handleDelete}>
-                        <DeleteIcon />
-                    </IconButton>
-                }
-                title={
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={item.done}
-                                onChange={handleToggleDone}
-                                name={`checked-${item.id}`}
-                                color="primary"
-                            />
-                        }
-                        label={item.title}
-                    />
-                }
-            />
-            {item.details ? (
-                <CardContent>
-                    <Typography variant="body2" component="p">
-                        {item.details}
-                    </Typography>
-                </CardContent>
-            ) : null}
-        </Card>
-    );
+  return (
+    <Card
+      className={classnames(classes.root, {
+        [classes.doneRoot]: item.done,
+      })}
+    >
+      <CardHeader
+        action={
+          <IconButton aria-label="delete" onClick={handleDelete}>
+            <DeleteIcon />
+          </IconButton>
+        }
+        title={
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={item.done}
+                onChange={handleToggleDone}
+                name={`checked-${item.id}`}
+                color="primary"
+              />
+            }
+            label={item.title}
+          />
+        }
+      />
+      {item.details ? (
+        <CardContent>
+          <Typography variant="body2" component="p">
+            {item.details}
+          </Typography>
+        </CardContent>
+      ) : null}
+    </Card>
+  );
 };

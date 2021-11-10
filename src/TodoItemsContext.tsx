@@ -42,7 +42,7 @@ export const TodoItemsContextProvider = ({
         if (savedState) {
             try {
                 dispatch({ type: 'loadState', data: JSON.parse(savedState) });
-            } catch {}
+            } catch { }
         }
     }, []);
 
